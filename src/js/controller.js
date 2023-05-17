@@ -1,4 +1,4 @@
-window.onload = async () => {
+(async () => {
   const urlAPI = 'https://xju6-kpzy-l8vj.n7.xano.io/api:4lTavcfO/components/';
   // contiene il json o testo della risposta, l'elemento da salvare in clipboard
   let o = '';
@@ -6,13 +6,20 @@ window.onload = async () => {
   let s = '';
   let t = '[bmg-arco-button]';
   let isSnippetCopy = false;
+ 
   const memberstack = window.$memberstackDom
-  // Get current member's JSON
-let memberJsonData = await memberstack.getMemberJSON();
-memberJson = memberJsonData.data || {savedComp:[]};
+  const memberData = await memberstack.getCurrentMember()
+  const member = memberData.data;
+  let memberJson = {};
+
+  if (member) {
+    // Get current member's JSON
+    const memberJsonData = await memberstack.getMemberJSON();
+    memberJson = memberJsonData.data || {savedComp:[]};
+  }
+  
 
 window.fsAttributes = window.fsAttributes || [];
-
 window.fsAttributes.push([
     'cmsload',
     listInstances => {
@@ -94,7 +101,26 @@ window.fsAttributes.push([
   const setListener = () => {
     //1 evento al click del platform button recuepro i dati necessari
     //per la chiamata, l'id viene messo da wized come attributo
-    $(t).click(function (event) {
+    $(t).click( function (event) {
+
+      if(!member){
+        Toastify({
+          text: "Login first",
+          destination:'https://www.tilebit.io/sign-in',
+          duration: 3000,
+          gravity: "top", // `top` or `bottom`
+          position: "center", // `left`, `center` or `right`
+          stopOnFocus: true, // Prevents dismissing of toast on hover
+          style: {
+            background: 'black',
+            'border-radius':'0.5rem'
+          },
+         
+        }).showToast();
+
+        return
+      }
+
       //event.stopPropagation();
       //console.log($(this))
       const platform = $(this).attr('bmg-arco-button');
@@ -160,13 +186,7 @@ window.fsAttributes.push([
 
   setListener();
 
-
-    
-
-   
+})().catch(err => {
+  console.error(err);
+});
   
-  
-
-
-  
-};
