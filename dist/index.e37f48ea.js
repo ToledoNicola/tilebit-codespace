@@ -558,10 +558,9 @@ function hmrAccept(bundle, id) {
 
 },{}],"aenu9":[function(require,module,exports) {
 (async ()=>{
-    const urlAPI = "https://xju6-kpzy-l8vj.n7.xano.io/api:4lTavcfO/components/";
     // contiene il json o testo della risposta, l'elemento da salvare in clipboard
     let o = "";
-    //contiene il tipo application/json o text/html e fail controllo con la primo carattere se è { da capire se puo rompere il flusso
+    //contiene il tipo application/json o text/html e fa il controllo con la primo carattere se è { da capire se puo rompere il flusso
     let s = "";
     let t = "[bmg-arco-button]";
     let isSnippetCopy = false;
@@ -592,33 +591,34 @@ function hmrAccept(bundle, id) {
             // if there are file names saved in the metadata
             if (memberJson.savedComp && pageName == "saved") // for each liked item
             // get it's name
-            $("[comp-card] [comp-card-title]").each((i, item)=>{
+            $("[comp-card]").each((i, item)=>{
+                const itemId = $(this).closest("[tb-item-id]").attr("tb-item-id");
                 // if the liked item's name also exists in the metadata's file names
-                if (memberJson.savedComp.indexOf($.trim($(item).text())) !== -1) // clone & append the liked item to the .user-files div
-                // (the reason for .clone() is to avoid removing it from its original .hack32-like-row)
+                if (memberJson.savedComp.indexOf(itemId) !== -1 || memberJson.savedInspo.indexOf(itemId) !== -1) // show the card
                 $(item).closest("[comp-item]").removeClass("hide");
             });
         }
     ]);
     //recupera lo snippet e modifica lo stato del bottone
-    function c(t, e, n) {
-        let logoPlatform = t.find("img").clone();
-        function i(e) {
+    function c(element, platform, id) {
+        const urlAPI = `https://xju6-kpzy-l8vj.n7.xano.io/api:4lTavcfO/components/${id}/platform/${platform}`;
+        let logoPlatform = element.find("img").clone();
+        function i(platform) {
             setTimeout(function() {
-                t.text(e), setTimeout(function() {
-                    t.empty(), t.append(logoPlatform), t.css({
+                element.text(platform), setTimeout(function() {
+                    element.empty(), element.append(logoPlatform), element.css({
                         "pointer-events": "auto"
                     });
                 }, 1500);
             }, 1500);
         }
         let c = new XMLHttpRequest();
-        t.css({
+        element.css({
             "pointer-events": "none"
-        }), t.empty(), t.text("Copying..."), c.open("GET", urlAPI + n, !0), c.onload = function() {
-            let t = JSON.parse(this.response);
+        }), element.empty(), element.text("Copying..."), c.open("GET", urlAPI, !0), c.onload = function() {
+            let ris = JSON.parse(this.response);
             // qui imposta o e s che stanno sopra
-            c.status >= 200 && c.status < 400 ? (o = t[e], s = "{" == t[e].charAt(0) ? "application/json" : "text/html", isSnippetCopy = true, document.execCommand("copy"), i("Copied!")) : i(`Error: ${c.status}`);
+            c.status >= 200 && c.status < 400 ? (o = ris[platform], s = "{" == ris[platform].charAt(0) ? "application/json" : "text/html", isSnippetCopy = true, document.execCommand("copy"), i("Copied!")) : i(`Error: ${c.status}`);
         }, c.send();
     }
     document.addEventListener("copy", (t)=>{
@@ -631,58 +631,85 @@ function hmrAccept(bundle, id) {
     const setListener = ()=>{
         //1 evento al click del platform button recuepro i dati necessari
         //per la chiamata, l'id viene messo da wized come attributo
+        $(".actions-button-wrapper").click(function(event) {
+            event.stopPropagation();
+            return true;
+        });
         $(t).click(function(event) {
             if (!member) {
-                Toastify({
-                    text: "Login first",
-                    destination: "https://www.tilebit.io/sign-in",
-                    duration: 3000,
-                    gravity: "top",
-                    position: "center",
-                    stopOnFocus: true,
-                    style: {
-                        background: "black",
-                        "border-radius": "0.5rem"
-                    }
-                }).showToast();
+                $(event.target).closest("[comp-card]").find('[w-el="compLock"]').css("display", "flex");
                 return;
             }
             //event.stopPropagation();
             //console.log($(this))
             const platform = $(this).attr("bmg-arco-button");
-            const id = $(this).attr("comp-id");
+            const id = $(this).closest("[tb-item-id]").attr("tb-item-id");
+            debugger;
             c($(this), platform, id);
         });
-        new ClipboardJS("[data-clipboard-text]");
+        new ClipboardJS("[data-clipboard-text]").on("success", function(el) {
+            const tippyInstance = el.trigger._tippy;
+            tippyInstance.setContent("Copied");
+            tippyInstance.show();
+        });
         tippy("[data-tippy-content]", {
-            trigger: "click",
-            duration: 300,
+            trigger: "manual",
+            duration: 100,
             onShow (instance) {
                 setTimeout(()=>{
                     instance.hide();
-                }, 3000);
+                }, 1000);
             }
         });
         // when the like button button is clicked
         // save the file's name to metadata
-        $("[comp-card-save-btn]").click(async function() {
-            // get the name of the liked item
-            const name = $.trim($(this).closest("[comp-card]").find("[comp-card-title]").text());
-            // if the name does not already exist in the metadata fileNames
-            memberJson.savedComp = memberJson.savedComp || [];
-            if (memberJson.savedComp.indexOf(name) === -1) {
-                // push the name to the metadata.fileNames array
-                memberJson.savedComp.push(name);
-                // get the number of fileNames in the metadata
-                // or set the number as 0 if there are no existing filenames
-                const num = memberJson.savedComp.length || 0;
-                // set the metadata itemsNum as the number of filenames in the metadata
-                memberJson.savedCompNum = num;
-                // update memberstack with the new metadata object
-                await memberstack.updateMemberJSON({
-                    json: memberJson
-                });
+        $("[comp-card-save-btn]").click(async function(event) {
+            if (!member) {
+                $(event.target).closest("[comp-card]").find('[w-el="compLock"]').css("display", "flex");
+                return;
             }
+            const tippyInstance = this._tippy;
+            // get the name of the liked item
+            // const name = $.trim(
+            //   $(this).closest('[comp-card]').find('[comp-card-title]').text()
+            // );
+            const itemId = $(this).closest("[tb-item-id]").attr("tb-item-id");
+            // if the name does not already exist in the metadata fileNames
+            const isInspo = $(this).closest("[comp-card]").attr("comp-card") == "inspiration";
+            if (isInspo) {
+                memberJson.savedInspo = memberJson.savedInspo || [];
+                if (memberJson.savedInspo.indexOf(itemId) === -1) {
+                    memberJson.savedInspo.push(itemId);
+                    const num = memberJson.savedInspo.length || 0;
+                    memberJson.savedInspoNum = num;
+                    await memberstack.updateMemberJSON({
+                        json: memberJson
+                    });
+                    tippyInstance.setContent("Saved");
+                    tippyInstance.show();
+                    return;
+                }
+            } else {
+                memberJson.savedComp = memberJson.savedComp || [];
+                if (memberJson.savedComp.indexOf(itemId) === -1) {
+                    // push the name to the metadata.fileNames array
+                    memberJson.savedComp.push(itemId);
+                    // get the number of fileNames in the metadata
+                    // or set the number as 0 if there are no existing filenames
+                    const num = memberJson.savedComp.length || 0;
+                    // set the metadata itemsNum as the number of filenames in the metadata
+                    memberJson.savedCompNum = num;
+                    // update memberstack with the new metadata object
+                    await memberstack.updateMemberJSON({
+                        json: memberJson
+                    });
+                    tippyInstance.setContent("Saved");
+                    tippyInstance.show();
+                    return;
+                }
+            }
+            tippyInstance.setContent("Already saved");
+            tippyInstance.show();
         });
         // when the delete button is clicked if in saved page
         $(document).on("click", ".hack32-like-item .del", function() {
