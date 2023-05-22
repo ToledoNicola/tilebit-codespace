@@ -632,7 +632,7 @@ function hmrAccept(bundle, id) {
         $("[comp-card-save-btn]").hide();
         //1 evento al click del platform button recuepro i dati necessari
         //per la chiamata, l'id viene messo da wized come attributo
-        $(".actions-button-wrapper").click(function(event) {
+        $(".actions-button-wrapper,[action-button]").click(function(event) {
             event.stopPropagation();
             return true;
         });
