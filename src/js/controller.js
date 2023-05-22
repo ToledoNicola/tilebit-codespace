@@ -114,10 +114,13 @@
 
     $(t).click(function (event) {
       if (!member) {
-        $(event.target)
-          .closest('[comp-card]')
-          .find('[w-el="compLock"]')
-          .css('display', 'flex');
+        // $(event.target)
+        //   .closest('[comp-card]')
+        //   .find('[w-el="compLock"]')
+        //   .css('display', 'flex');
+
+          $('[lock-modal-button]')[0]
+          .click();
 
         return;
       }
@@ -150,10 +153,14 @@ debugger
     // save the file's name to metadata
     $('[comp-card-save-btn]').click(async function (event) {
       if (!member) {
-        $(event.target)
-          .closest('[comp-card]')
-          .find('[w-el="compLock"]')
-          .css('display', 'flex');
+        // $(event.target)
+        //   .closest('[comp-card]')
+        //   .find('[w-el="compLock"]')
+        //   .css('display', 'flex');
+
+          $('[lock-modal-button]')[0]
+          .click();
+
         return;
       }
       const tippyInstance = this._tippy;
