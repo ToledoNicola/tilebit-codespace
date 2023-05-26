@@ -1,20 +1,42 @@
 (async () => {
-  // contiene il json o testo della risposta, l'elemento da salvare in clipboard
-  let o = '';
-  //contiene il tipo application/json o text/html e fa il controllo con la primo carattere se è { da capire se puo rompere il flusso
-  let s = '';
-  let t = '[bmg-arco-button]';
+  let baseUrlGTilebit = 'https://xju6-kpzy-l8vj.n7.xano.io/api:4lTavcfO';
+  let baseUrlGOutseta = 'https://xju6-kpzy-l8vj.n7.xano.io/api:8p4wLdYy';
+  let platformData = '';
+  let contentType = '';
+  let targetButton = '[bmg-arco-button]';
   let isSnippetCopy = false;
+  let xtoken = null;
+  let memberData = null;
 
-  const memberstack = window.$memberstackDom;
-  const memberData = await memberstack.getCurrentMember();
-  const member = memberData.data;
+  const ostoken = Outseta.getAccessToken();
+  if (ostoken) {
+    memberData = await Outseta.getUser();
+  }
+
+  const member = memberData;
   let memberJson = {};
 
   if (member) {
-    // Get current member's JSON
-    const memberJsonData = await memberstack.getMemberJSON();
-    memberJson = memberJsonData.data || { savedComp: [] };
+    const memberJsonData = {};
+    memberJsonData.savedComp = JSON.parse(member.SavedComponents || '[]');
+    memberJsonData.savedInspo = JSON.parse(member.SavedInspirations || '[]');
+    memberJson = memberJsonData;
+  }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  let accessToken = urlParams.get('access_token')
+    ? urlParams.get('access_token')
+    : localStorage.getItem('Outseta.nocode.accessToken');
+  if (accessToken) {
+    // Generate xtoken if accessToken is present
+    try {
+      const res = await callXApi(baseUrlGOutseta, 'outseta/auth', 'POST', {token:accessToken});
+      if (res?.authToken) {
+        xtoken = res.authToken;
+      }
+    } catch (error) {
+      console.error('erore nel recupero xano token');
+    }
   }
 
   window.fsAttributes = window.fsAttributes || [];
@@ -23,114 +45,85 @@
     listInstances => {
       console.log('cmsload Successfully loaded!');
 
-      // The callback passes a `listInstances` array with all the `CMSList` instances on the page.
       const [listInstance] = listInstances;
 
-      // The `renderitems` event runs whenever the list renders items after switching pages.
       listInstance.on('renderitems', renderedItems => {
         console.log('page changed');
-
         setListener();
       });
 
       const pageName = location.href.split('/').slice(-1)[0];
-      // if there are file names saved in the metadata
-      if (memberJson.savedComp && pageName == 'saved') {
-        // for each liked item
-        // get it's name
+      if (memberJson.savedComp && pageName === 'saved') {
         $('[comp-card]').each((i, item) => {
-          const itemId = $(this).closest('[tb-item-id]').attr('tb-item-id')
-
-          // if the liked item's name also exists in the metadata's file names
+          const itemId = $(item).closest('[tb-item-id]').attr('tb-item-id');
           if (
             memberJson.savedComp.indexOf(itemId) !== -1 ||
             memberJson.savedInspo.indexOf(itemId) !== -1
           ) {
-            // show the card
             $(item).closest('[comp-item]').removeClass('hide');
           }
         });
-
-        //Webflow.require('ix2').init()
       }
     },
   ]);
 
-  //recupera lo snippet e modifica lo stato del bottone
-  function c(element, platform, id) {    
-    const urlAPI = `https://xju6-kpzy-l8vj.n7.xano.io/api:4lTavcfO/components/${id}/platform/${platform}`;
+  function copyComponent(element, platform, componentId) {
+    const endpoint = `components/${componentId}/platform/${platform}`;
+    let platformwrapper = element.find('[tb-pl-butt-wrapper]').clone();
 
-    let logoPlatform = element.find('img').clone();
-    function i(platform) {
+    async function displayMessage(message) {
       setTimeout(function () {
-        element.text(platform),
-          setTimeout(function () {
-            element.empty(),
-              element.append(logoPlatform),
-              element.css({ 'pointer-events': 'auto' });
-          }, 1500);
+        element.text(message);
+        setTimeout(function () {
+          element.empty();
+          element.append(platformwrapper);
+          element.css({ 'pointer-events': 'auto' });
+        }, 1500);
       }, 1500);
     }
-    let c = new XMLHttpRequest();
-    element.css({ 'pointer-events': 'none' }),
-      element.empty(),
-      element.text('Copying...'),
-      c.open('GET', urlAPI, !0),
-      (c.onload = function () {
-        let ris = JSON.parse(this.response);
-        // qui imposta o e s che stanno sopra
-        c.status >= 200 && c.status < 400
-          ? ((o = ris[platform]),
-            (s = '{' == ris[platform].charAt(0) ? 'application/json' : 'text/html'),
-            (isSnippetCopy = true),
-            document.execCommand('copy'),
-            i('Copied!'))
-          : i(`Error: ${c.status}`);
-      }),
-      c.send();
+
+    element.css({ 'pointer-events': 'none' });
+    element.empty();
+    element.text('Copying...');
+
+    callXApi(baseUrlGTilebit, endpoint, 'GET')
+      .then(responseData => {
+        platformData = responseData[platform];
+        contentType =
+          platformData.charAt(0) === '{' ? 'application/json' : 'text/html';
+        isSnippetCopy = true;
+        document.execCommand('copy');
+        displayMessage('Copied!');
+      })
+      .catch(error => {
+        debugger
+        displayMessage(`Error: ${error.message}`);
+      });
   }
 
-  document.addEventListener('copy', t => {
+  document.addEventListener('copy', event => {
     if (isSnippetCopy) {
-      // recupra i dati salvati prima per il clipboard
-      t.clipboardData.setData(s, o), t.preventDefault();
+      event.clipboardData.setData(contentType, platformData);
+      event.preventDefault();
       isSnippetCopy = false;
     }
   });
 
   const setListener = () => {
-
-    $('[comp-card-save-btn]').hide()
-
-
-
-    //1 evento al click del platform button recuepro i dati necessari
-    //per la chiamata, l'id viene messo da wized come attributo
-
-    $('.actions-button-wrapper,[action-button]').click(function (event) {
+    $('.actions-button-wrapper, [action-button]').click(function (event) {
       event.stopPropagation();
       return true;
     });
 
-    $(t).click(function (event) {
+    $(targetButton).click(function (event) {
       if (!member) {
-        // $(event.target)
-        //   .closest('[comp-card]')
-        //   .find('[w-el="compLock"]')
-        //   .css('display', 'flex');
-
-          $('[lock-modal-button]')[0]
-          .click();
-
+        $('[lock-modal-button]')[0].click();
         return;
       }
 
-      //event.stopPropagation();
-      //console.log($(this))
       const platform = $(this).attr('bmg-arco-button');
       const id = $(this).closest('[tb-item-id]').attr('tb-item-id');
-debugger
-      c($(this), platform, id);
+      copyComponent($(this), platform, id);
     });
 
     new ClipboardJS('[data-clipboard-text]').on('success', function (el) {
@@ -149,39 +142,26 @@ debugger
       },
     });
 
-    // when the like button button is clicked
-    // save the file's name to metadata
     $('[comp-card-save-btn]').click(async function (event) {
       if (!member) {
-        // $(event.target)
-        //   .closest('[comp-card]')
-        //   .find('[w-el="compLock"]')
-        //   .css('display', 'flex');
-
-          $('[lock-modal-button]')[0]
-          .click();
-
+        $('[lock-modal-button]')[0].click();
         return;
       }
-      const tippyInstance = this._tippy;
 
-      // get the name of the liked item
-      // const name = $.trim(
-      //   $(this).closest('[comp-card]').find('[comp-card-title]').text()
-      // );
-      const itemId = $(this).closest('[tb-item-id]').attr('tb-item-id')
-      // if the name does not already exist in the metadata fileNames
-      const isInspo = $(this).closest('[comp-card]').attr('comp-card') == 'inspiration';
+      const tippyInstance = this._tippy;
+      const itemId = $(this).closest('[tb-item-id]').attr('tb-item-id');
+      const isInspo =
+        $(this).closest('[comp-card]').attr('comp-card') === 'inspiration';
 
       if (isInspo) {
         memberJson.savedInspo = memberJson.savedInspo || [];
         if (memberJson.savedInspo.indexOf(itemId) === -1) {
           memberJson.savedInspo.push(itemId);
-
           const num = memberJson.savedInspo.length || 0;
-
           memberJson.savedInspoNum = num;
-          await memberstack.updateMemberJSON({ json: memberJson });
+          await member.update({
+            SavedInspirations: JSON.stringify(memberJson.savedInspo),
+          });
 
           tippyInstance.setContent('Saved');
           tippyInstance.show();
@@ -190,15 +170,12 @@ debugger
       } else {
         memberJson.savedComp = memberJson.savedComp || [];
         if (memberJson.savedComp.indexOf(itemId) === -1) {
-          // push the name to the metadata.fileNames array
           memberJson.savedComp.push(itemId);
-          // get the number of fileNames in the metadata
-          // or set the number as 0 if there are no existing filenames
           const num = memberJson.savedComp.length || 0;
-          // set the metadata itemsNum as the number of filenames in the metadata
           memberJson.savedCompNum = num;
-          // update memberstack with the new metadata object
-          await memberstack.updateMemberJSON({ json: memberJson });
+          await member.update({
+            SavedComponents: JSON.stringify(memberJson.savedComp),
+          });
 
           tippyInstance.setContent('Saved');
           tippyInstance.show();
@@ -210,28 +187,51 @@ debugger
       tippyInstance.show();
     });
 
-    // when the delete button is clicked if in saved page
+    // todo da cambiare
     $(document).on('click', '.hack32-like-item .del', function () {
-      // get the name of the liked item
       const name = $.trim(
         $(this).closest('.hack32-like-item').find('.hack32-title').text()
       );
-      // if the name exists in the metadata fileNames
       if (metadata.fileNames.indexOf(name) !== -1) {
-        // remove the name from metadata fileNames
         metadata.fileNames.splice(metadata.fileNames.indexOf(name), 1);
-        // update the number of items
         metadata.itemsNum = metadata.fileNames.length;
-        // display the updated number of items
         $('.hack32-like-count').text(metadata.itemsNum);
-        // update memberstack with the new metadata object
         member.updateMetaData(metadata);
       }
 
-      // remove item from the saved items div
       $(this).closest('.hack32-like-item').remove();
     });
   };
+
+  // Funzione per effettuare la chiamata all'API
+  async function callXApi(baseUrlGroup, endpoint, method, data) {
+    const url = `${baseUrlGroup}/${endpoint}`;
+
+    // Imposta l'intestazione Authorization con il token di autenticazione
+    const headers = {
+      Authorization: `Bearer ${xtoken}`,
+      'Content-Type': 'application/json',
+    };
+
+    // Configurazione della richiesta
+    const options = {
+      method,
+      headers,
+      body: JSON.stringify(data),
+    };
+
+    try {
+      // Effettua la chiamata all'API utilizzando fetch() e attendi la risposta
+      const response = await fetch(url, options);
+      const result = await response.json();
+
+      return result;
+      // Gestisci la risposta dell'API
+    } catch (error) {
+      // Gestisci gli errori
+      throw new Error(`Error: ${error}`);
+    }
+  }
 
   setListener();
 })().catch(err => {
