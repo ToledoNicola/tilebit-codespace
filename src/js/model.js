@@ -1,95 +1,5 @@
-(async () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  let baseUrlGTilebit = 'https://xju6-kpzy-l8vj.n7.xano.io/api:4lTavcfO';
-  let baseUrlGOutseta = 'https://xju6-kpzy-l8vj.n7.xano.io/api:8p4wLdYy';
-  let baseUrlGPaddle = 'https://xju6-kpzy-l8vj.n7.xano.io/api:9U9Y_l4P';
-  let platformData = '';
-  let contentType = '';
-  let targetButton = '[bmg-arco-button]';
-  let isSnippetCopy = false;
-  let xtoken = null;
-  let xUserId = null;
-  let member = null;
-  let memberJson = {};
-  let paddleSubscription = null;
 
-  //fire only if user is loggedin
-  Outseta.getUser().then(user => {
-    member = user;
-    amplitude.setUserId(member.Uid);
 
-    const memberJsonData = {};
-    memberJsonData.savedComp = JSON.parse(member.SavedComponents || '[]');
-    memberJsonData.savedInspo = JSON.parse(member.SavedInspirations || '[]');
-    memberJson = memberJsonData;
-  }).catch((err)=>{
-
-    debugger
-  });
-
-  let accessToken = urlParams.get('access_token')
-    ? urlParams.get('access_token')
-    : localStorage.getItem('Outseta.nocode.accessToken');
-
-  if (accessToken) {
-    // Generate xtoken if accessToken is present
-    try {
-      const res = await callXApi(baseUrlGOutseta, 'outseta/auth', 'POST', {
-        token: accessToken,
-      });
-      if (res?.authToken) {
-        xtoken = res.authToken;
-        xUserId = res.user_id;
-      }
-    } catch (error) {
-      console.error('erore nel recupero xano token');
-    }
-
-    if (xtoken) {
-      try {
-          //fetch user paddle sub
-          const paddleRes = await callXApi(
-            baseUrlGPaddle,
-            'user/subscription',
-            'GET'
-          );
-        paddleSubscription = paddleRes
-        debugger
-      } catch (error) {
-        console.error('erore nel recupero subscription');
-      }
-    }
-  }
-
-  window.fsAttributes = window.fsAttributes || [];
-  window.fsAttributes.push([
-    'cmsload',
-    listInstances => {
-      console.log('cmsload Successfully loaded!');
-
-      const [listInstance] = listInstances;
-
-      listInstance.on('renderitems', renderedItems => {
-        console.log('page changed');
-        scrollToTop();
-        setListener();
-      });
-
-      //OLD WAY TO SHOW USER SAVED FETCHING ALL THE ITEMS
-      // const pageName = location.href.split('/').slice(-1)[0];
-      // if (memberJson.savedComp && pageName === 'saved') {
-      //   $('[comp-card]').each((i, item) => {
-      //     const itemId = $(item).closest('[tb-item-id]').attr('tb-item-id');
-      //     if (
-      //       memberJson.savedComp.indexOf(itemId) !== -1 ||
-      //       memberJson.savedInspo.indexOf(itemId) !== -1
-      //     ) {
-      //       $(item).closest('[comp-item]').removeClass('hide');
-      //     }
-      //   });
-      // }
-    },
-  ]);
 
   function scrollToTop() {
     // Smooth scroll animation
@@ -133,13 +43,7 @@
       });
   }
 
-  document.addEventListener('copy', event => {
-    if (isSnippetCopy) {
-      event.clipboardData.setData(contentType, platformData);
-      event.preventDefault();
-      isSnippetCopy = false;
-    }
-  });
+
 
   const setListener = () => {
     $('.actions-button-wrapper, [action-button]').click(function (event) {
@@ -269,7 +173,6 @@
     }
   }
 
-  setListener();
 
   function isPaidSubscritionActive() {
     if (!paddleSubscription) {
@@ -292,7 +195,6 @@
       passthrough: `{"x_user_id": "${xUserId}"}`,
     });
   }
-  $(document).on('click', '[paddle-action-btn="freelance-monthly"]', openFreelanceMonthlyCheckout);
   function openFreelanceYearlyCheckout() {
     debugger;
     Paddle.Checkout.open({
@@ -301,7 +203,6 @@
       passthrough: `{"x_user_id": "${xUserId}"}`,
     });
   }
-  $(document).on('click', '[paddle-action-btn="freelance-yearly"]', openFreelanceYearlyCheckout);
 
 
   function openUpdatePaddle() {
@@ -311,7 +212,6 @@
       passthrough: `{"x_user_id": "${xUserId}"}`,
     });
   }
-  $(document).on('click', '[paddle-action-btn="update"]', openUpdatePaddle);
 
 
   function openCancelPaddle() {
@@ -321,9 +221,5 @@
       passthrough: `{"x_user_id": "${xUserId}"}`,
     });
   }
-  $(document).on('click', '[paddle-action-btn="cancel"]', openCancelPaddle);
 
 
-})().catch(err => {
-  console.error(err);
-});
