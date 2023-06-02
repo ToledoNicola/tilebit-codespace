@@ -1,4 +1,13 @@
 (async () => {
+
+   
+   /**
+    * --------------------------------------------------------------------------------------
+    * VARIABLES
+    * 
+    */
+  
+  window.fsAttributes = window.fsAttributes || [];
   const urlParams = new URLSearchParams(window.location.search);
   let baseUrlGTilebit = 'https://xju6-kpzy-l8vj.n7.xano.io/api:4lTavcfO';
   let baseUrlGOutseta = 'https://xju6-kpzy-l8vj.n7.xano.io/api:8p4wLdYy';
@@ -12,6 +21,25 @@
   let member = null;
   let memberJson = {};
   let paddleSubscription = null;
+  let accessToken = urlParams.get('access_token')
+    ? urlParams.get('access_token')
+    : localStorage.getItem('Outseta.nocode.accessToken');
+
+
+  /**
+    * --------------------------------------------------------------------------------------
+    * END VARIABLES
+    * 
+    */
+
+
+  /**
+    * --------------------------------------------------------------------------------------
+    * CONTROLLERS
+    * 
+    */
+
+
 
   //fire only if user is loggedin
   Outseta.getUser().then(user => {
@@ -26,10 +54,6 @@
 
     debugger
   });
-
-  let accessToken = urlParams.get('access_token')
-    ? urlParams.get('access_token')
-    : localStorage.getItem('Outseta.nocode.accessToken');
 
   if (accessToken) {
     // Generate xtoken if accessToken is present
@@ -61,7 +85,6 @@
     }
   }
 
-  window.fsAttributes = window.fsAttributes || [];
   window.fsAttributes.push([
     'cmsload',
     listInstances => {
@@ -75,23 +98,33 @@
         setListener();
       });
 
-      //OLD WAY TO SHOW USER SAVED FETCHING ALL THE ITEMS
-      // const pageName = location.href.split('/').slice(-1)[0];
-      // if (memberJson.savedComp && pageName === 'saved') {
-      //   $('[comp-card]').each((i, item) => {
-      //     const itemId = $(item).closest('[tb-item-id]').attr('tb-item-id');
-      //     if (
-      //       memberJson.savedComp.indexOf(itemId) !== -1 ||
-      //       memberJson.savedInspo.indexOf(itemId) !== -1
-      //     ) {
-      //       $(item).closest('[comp-item]').removeClass('hide');
-      //     }
-      //   });
-      // }
+    
     },
   ]);
 
-  function scrollToTop() {
+  setListener();
+
+  $(document).on('click', '[paddle-action-btn="freelance-monthly"]', openFreelanceMonthlyCheckout);
+
+  $(document).on('click', '[paddle-action-btn="freelance-yearly"]', openFreelanceYearlyCheckout);
+
+  $(document).on('click', '[paddle-action-btn="update"]', openUpdatePaddle);
+
+  $(document).on('click', '[paddle-action-btn="cancel"]', openCancelPaddle);
+
+  /**
+    * --------------------------------------------------------------------------------------
+    * END CONTROLLERS
+    * 
+    */
+
+   /**
+    * --------------------------------------------------------------------------------------
+    * MODELS
+    * 
+    */
+
+   function scrollToTop() {
     // Smooth scroll animation
     window.scrollTo({
       top: 0,
@@ -133,13 +166,7 @@
       });
   }
 
-  document.addEventListener('copy', event => {
-    if (isSnippetCopy) {
-      event.clipboardData.setData(contentType, platformData);
-      event.preventDefault();
-      isSnippetCopy = false;
-    }
-  });
+
 
   const setListener = () => {
     $('.actions-button-wrapper, [action-button]').click(function (event) {
@@ -269,7 +296,6 @@
     }
   }
 
-  setListener();
 
   function isPaidSubscritionActive() {
     if (!paddleSubscription) {
@@ -292,7 +318,6 @@
       passthrough: `{"x_user_id": "${xUserId}"}`,
     });
   }
-  $(document).on('click', '[paddle-action-btn="freelance-monthly"]', openFreelanceMonthlyCheckout);
   function openFreelanceYearlyCheckout() {
     debugger;
     Paddle.Checkout.open({
@@ -301,7 +326,6 @@
       passthrough: `{"x_user_id": "${xUserId}"}`,
     });
   }
-  $(document).on('click', '[paddle-action-btn="freelance-yearly"]', openFreelanceYearlyCheckout);
 
 
   function openUpdatePaddle() {
@@ -311,7 +335,6 @@
       passthrough: `{"x_user_id": "${xUserId}"}`,
     });
   }
-  $(document).on('click', '[paddle-action-btn="update"]', openUpdatePaddle);
 
 
   function openCancelPaddle() {
@@ -321,7 +344,14 @@
       passthrough: `{"x_user_id": "${xUserId}"}`,
     });
   }
-  $(document).on('click', '[paddle-action-btn="cancel"]', openCancelPaddle);
+
+
+  
+ /**
+    * --------------------------------------------------------------------------------------
+    * END MODELS
+    * 
+    */
 
 
 })().catch(err => {

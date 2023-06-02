@@ -1,6 +1,3 @@
-
-
-
   function scrollToTop() {
     // Smooth scroll animation
     window.scrollTo({
