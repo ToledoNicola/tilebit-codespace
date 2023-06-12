@@ -39,10 +39,13 @@
 
   function scrollToTop() {
     // Smooth scroll animation
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth',
-    });
+    const div = document.getElementById('filters-section');
+  
+  // Scroll smoothly to the top position of the div
+  div.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start'
+  });
   }
 
   function copyComponent(element, platform, componentId) {
@@ -82,7 +85,7 @@
   const setListener = () => {
     setTippyHover();
 
-    showLockPaidElm()
+    // showLockPaidElm()
 
     $('.actions-button-wrapper, [action-button]').click(function (event) {
       event.stopPropagation();
@@ -268,7 +271,7 @@
   }
 
   function showLockPaidElm() {
-    $('.lock').css({ display: 'block', opacity: '1' });
+    $('.lock').css({ display: 'block', opacity: '0' });
   }
 
   /**
@@ -325,10 +328,10 @@
       paddleSubscription = paddleRes;
       //debugger;
 
-      if (!isPaidSubscritionActive()) {
-        //show lock
-        showLockPaidElm()
-      }
+      // if (!isPaidSubscritionActive()) {
+      //   //show lock
+      //   showLockPaidElm()
+      // }
     } catch (error) {
       console.error('erore nel recupero subscription');
     }
@@ -345,9 +348,13 @@
         return;
       }
 
-      if(window.fsAttributes.cmsnest){
-          window.fsAttributes.cmsnest.init();
-      }
+      /**
+       * to manually activate the nest for all-compoennts inspirations with nest-collectin using slugs
+       * beasue inspiration collection has more than 100 items
+       */
+      // if(window.fsAttributes.cmsnest){
+      //     window.fsAttributes.cmsnest.init();
+      // }
 
       listInstance.on('renderitems', renderedItems => {
         console.log('page changed');

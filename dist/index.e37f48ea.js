@@ -589,9 +589,11 @@ function hmrAccept(bundle, id) {
    *
    */ function scrollToTop() {
         // Smooth scroll animation
-        window.scrollTo({
-            top: 0,
-            behavior: "smooth"
+        const div = document.getElementById("filters-section");
+        // Scroll smoothly to the top position of the div
+        div.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
         });
     }
     function copyComponent(element, platform, componentId) {
@@ -627,7 +629,7 @@ function hmrAccept(bundle, id) {
     }
     const setListener = ()=>{
         setTippyHover();
-        showLockPaidElm();
+        // showLockPaidElm()
         $(".actions-button-wrapper, [action-button]").click(function(event) {
             event.stopPropagation();
             return true;
@@ -774,7 +776,7 @@ function hmrAccept(bundle, id) {
     function showLockPaidElm() {
         $(".lock").css({
             display: "block",
-            opacity: "1"
+            opacity: "0"
         });
     }
     /**
@@ -814,9 +816,11 @@ function hmrAccept(bundle, id) {
             //fetch user paddle sub
             const paddleRes = await callXApi(baseUrlGPaddle, "user/subscription", "GET");
             paddleSubscription = paddleRes;
-            //debugger;
-            if (!isPaidSubscritionActive()) //show lock
-            showLockPaidElm();
+        //debugger;
+        // if (!isPaidSubscritionActive()) {
+        //   //show lock
+        //   showLockPaidElm()
+        // }
         } catch (error) {
             console.error("erore nel recupero subscription");
         }
@@ -827,7 +831,12 @@ function hmrAccept(bundle, id) {
             console.log("cmsload Successfully loaded!");
             const [listInstance] = listInstances;
             if (!listInstance) return;
-            if (window.fsAttributes.cmsnest) window.fsAttributes.cmsnest.init();
+            /**
+       * to manually activate the nest for all-compoennts inspirations with nest-collectin using slugs
+       * beasue inspiration collection has more than 100 items
+       */ // if(window.fsAttributes.cmsnest){
+            //     window.fsAttributes.cmsnest.init();
+            // }
             listInstance.on("renderitems", (renderedItems)=>{
                 console.log("page changed");
                 scrollToTop();
